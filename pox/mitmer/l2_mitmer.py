@@ -50,15 +50,22 @@ class Mitmer (EventMixin):
     log.info("Initializing Mitmer, ports=%s", self.ports)
 
   def isTapPort(self, port):
+    '''
+    Returns true of the given port is the tap port.
+    '''
     return (port == self.tap_port)
 
   def getAnotherPort(self, port):
+    '''
+    Returns the port complimentary to the given one.
+    '''
     if port == self.ports[0]: return self.ports[1]
     elif port == self.ports[1]: return self.ports[0]
     else: raise ValueError('unexpected port %d' % port)
 
   def _handle_PacketIn (self, event):
 	'''
+	Handles an incoming packets.
 	'''
 	packet = event.parse()
     	#log.info("got a packet %s" % packet)
@@ -66,10 +73,15 @@ class Mitmer (EventMixin):
 	in_port = event.port
 	buffer_id = event.ofp.buffer_id
 
-	anotherPort = self.getAnotherPort(in_port)
-	self.forward_flow(in_port, buffer_id, packet, anotherPort)
+	if self.isTapPort(in_port):
+    		log.info("dropping a packet received on the tap port: %s" % packet)
+		return
+	elif not self.redirect(in_port, buffer_id, packet, out_port):
+		# just forward it through to another port
+		anotherPort = self.getAnotherPort(in_port)
+		self.straight_forward(in_port, buffer_id, packet, anotherPort)
 
-  def forward_flow(self, in_port, buffer_id, packet, out_port):
+  def straight_forward(self, in_port, buffer_id, packet, out_port):
 	'''
 	This method:
 		1) forwards the given buffer to the specified port
@@ -82,6 +94,9 @@ class Mitmer (EventMixin):
         msg.actions.append(of.ofp_action_output(port = out_port))
         msg.buffer_id = buffer_id
         self.connection.send(msg)
+
+  def redirect(self, in_port, buffer_id, packet, out_port):
+	return false
 
 class l2_mitmer (EventMixin):
   """
