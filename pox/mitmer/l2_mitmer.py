@@ -26,11 +26,22 @@ from pox.lib.revent import *
 from pox.lib.util import dpidToStr
 from pox.lib.util import str_to_bool
 import time
+from pox.lib.packet.ipv4 import ipv4
+from pox.openflow.libopenflow_01 import *
 
 log = core.getLogger()
 
-# We don't want to flood immediately when a switch connects.
+# Default flow idle timeout value to use when creating new flows
 FLOW_IDLE_TIMEOUT = 60
+
+
+class Tap(object):
+	port = 65534
+	tap_dl_addr = 'b8:8d:12:53:76:45'
+	tap_nw_addr = '10.255.255.254'
+	tapgw_dl_addr = 'b8:8d:12:53:76:46'
+	tapgw_nw_addr = '10.255.255.253'
+
 
 class Mitmer (EventMixin):
   '''
@@ -42,7 +53,14 @@ class Mitmer (EventMixin):
     self.connection = connection
 
     self.ports = [1, 2]
-    self.tap_port = 65534
+    self.tap = Tap()
+
+    self.redirectors = [
+	TFTP_Redirector(
+		self,
+		in_port = 2,
+		server_nw_addr = '10.66.98.1'
+	)]
 
     # We want to hear PacketIn messages, so we listen
     self.listenTo(connection)
@@ -53,7 +71,7 @@ class Mitmer (EventMixin):
     '''
     Returns true of the given port is the tap port.
     '''
-    return (port == self.tap_port)
+    return (port == self.tap.port)
 
   def getAnotherPort(self, port):
     '''
@@ -68,13 +86,13 @@ class Mitmer (EventMixin):
 	Handles an incoming packets.
 	'''
 	packet = event.parse()
-    	#log.info("got a packet %s" % packet)
-
 	in_port = event.port
+    	log.info("from port %d got a packet: %s" % (in_port, packet))
+
 	buffer_id = event.ofp.buffer_id
 
 	if self.isTapPort(in_port):
-    		log.info("dropping a packet received on the tap port: %s" % packet)
+    		log.debug("dropping a packet received on the tap port: %s" % packet)
 		return
 	elif not self.redirect(in_port, buffer_id, packet):
 		# just forward it through to another port
@@ -98,7 +116,75 @@ class Mitmer (EventMixin):
   def redirect(self, in_port, buffer_id, packet):
 	'''
 	'''
+	for redirector in self.redirectors:
+		if redirector.process(in_port, buffer_id, packet):
+			log.info('processed with redirector %s' % redirector)
+			return True
+	log.debug('not processed with any redirector')
 	return False
+
+  def mk_flow(self, match, actions, buffer_id=None):
+	msg = of.ofp_flow_mod()
+	msg.match = match
+	msg.idle_timeout = FLOW_IDLE_TIMEOUT
+	if buffer_id != None:
+		msg.buffer_id = buffer_id
+	msg.actions.extend(actions)
+	self.connection.send(msg)
+
+
+class TFTP_Redirector(object):
+  '''
+  This redirector will capture TFTP requests to the given server and redirect them to the tap
+  '''
+  TFTP_SERVER_PORT = 69
+
+  def __init__(self, mitmer, in_port, server_nw_addr):
+	self.mitmer = mitmer
+  	self.in_port = in_port
+	self.server_nw_addr = server_nw_addr
+
+  def qualify(self, in_port, packet):
+	if self.in_port != in_port:
+		log.debug('packet disqualified because of ingress port mismatch')
+		return False
+	ip4h = packet.find("ipv4")  # XXX what about IPv6?
+	if (ip4h == None
+		or (ip4h.dstip != self.server_nw_addr)
+		or (ip4h.protocol != ipv4.UDP_PROTOCOL)):
+		log.debug('packet disqualified because of IPv4 headers mismatch: %s' % ip4h)
+		return False
+    	udph = packet.find("udp")
+	if (udph == None
+		or (udph.dstport != self.TFTP_SERVER_PORT)):
+		log.info('packet disqualified because of UDP headers mismatch: %s' % udph)
+		return False
+	return True
+
+  def process(self, in_port, buffer_id, packet):
+	if not self.qualify(in_port, packet):
+		return False
+
+	ip4h = packet.find("ipv4")  # XXX what about IPv6?
+    	udph = packet.find("udp")
+
+	# capture all similar packets, but ignore destination UDP port
+        match1 = of.ofp_match.from_packet(packet)
+        match1.tp_dst = None  # XXX should add a flag to from_packet() instead
+
+	actions1 = []
+	# SNAT to TAPGW
+	actions1.append(of.ofp_action_dl_addr(type=OFPAT_SET_DL_SRC, dl_addr=self.mitmer.tap.tapgw_dl_addr))
+	actions1.append(of.ofp_action_nw_addr(type=OFPAT_SET_NW_SRC, nw_addr=self.mitmer.tap.tapgw_nw_addr))
+	# DNAT to TAP
+	actions1.append(of.ofp_action_dl_addr(type=OFPAT_SET_DL_DST, dl_addr=self.mitmer.tap.tap_dl_addr))
+	actions1.append(of.ofp_action_nw_addr(type=OFPAT_SET_NW_DST, nw_addr=self.mitmer.tap.tap_nw_addr))
+	# output to TAP
+	actions1.append(of.ofp_action_output(port = self.mitmer.tap.port))
+
+	self.mitmer.mk_flow(match1, actions1, buffer_id)
+
+	return True
 
 class l2_mitmer (EventMixin):
   """
@@ -108,7 +194,7 @@ class l2_mitmer (EventMixin):
     self.listenTo(core.openflow)
 
   def _handle_ConnectionUp (self, event):
-    log.info("Connection %s" % (event.connection,))
+    log.debug("Connection %s" % (event.connection,))
     Mitmer(event.connection)
 
 
