@@ -76,7 +76,7 @@ class Mitmer (EventMixin):
 	if self.isTapPort(in_port):
     		log.info("dropping a packet received on the tap port: %s" % packet)
 		return
-	elif not self.redirect(in_port, buffer_id, packet, out_port):
+	elif not self.redirect(in_port, buffer_id, packet):
 		# just forward it through to another port
 		anotherPort = self.getAnotherPort(in_port)
 		self.straight_forward(in_port, buffer_id, packet, anotherPort)
@@ -95,8 +95,10 @@ class Mitmer (EventMixin):
         msg.buffer_id = buffer_id
         self.connection.send(msg)
 
-  def redirect(self, in_port, buffer_id, packet, out_port):
-	return false
+  def redirect(self, in_port, buffer_id, packet):
+	'''
+	'''
+	return False
 
 class l2_mitmer (EventMixin):
   """
