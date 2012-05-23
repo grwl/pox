@@ -1,4 +1,5 @@
-# Copyright 2012 Alexandre Bezroutchko.
+# Copyright 2012 Alexandre Bezroutchko abb@gremwell.com
+# Based on forwarding.l2_learning, copyright 2011 James McCauley
 #
 # This file is part of POX.
 #
