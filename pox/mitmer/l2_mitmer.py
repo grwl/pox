@@ -28,6 +28,7 @@ from pox.lib.util import str_to_bool
 import time
 from pox.lib.packet.ipv4 import ipv4
 from pox.openflow.libopenflow_01 import *
+from pox.lib.addresses import *
 
 log = core.getLogger()
 
@@ -37,10 +38,10 @@ FLOW_IDLE_TIMEOUT = 60
 
 class Tap(object):
 	port = 65534
-	tap_dl_addr = 'b8:8d:12:53:76:45'
-	tap_nw_addr = '10.255.255.254'
-	tapgw_dl_addr = 'b8:8d:12:53:76:46'
-	tapgw_nw_addr = '10.255.255.253'
+	tap_dl_addr = EthAddr('b8:8d:12:53:76:45')
+	tap_nw_addr = IPAddr('10.255.255.254')
+	tapgw_dl_addr = EthAddr('b8:8d:12:53:76:46')
+	tapgw_nw_addr = IPAddr('10.255.255.253')
 
 
 class Mitmer (EventMixin):
@@ -168,21 +169,39 @@ class TFTP_Redirector(object):
 	ip4h = packet.find("ipv4")  # XXX what about IPv6?
     	udph = packet.find("udp")
 
+	# -- forward flow
 	# capture all similar packets, but ignore destination UDP port
         match1 = of.ofp_match.from_packet(packet)
         match1.tp_dst = None  # XXX should add a flag to from_packet() instead
 
 	actions1 = []
-	# SNAT to TAPGW
+	# L2/L3 SNAT to TAPGW
 	actions1.append(of.ofp_action_dl_addr(type=OFPAT_SET_DL_SRC, dl_addr=self.mitmer.tap.tapgw_dl_addr))
 	actions1.append(of.ofp_action_nw_addr(type=OFPAT_SET_NW_SRC, nw_addr=self.mitmer.tap.tapgw_nw_addr))
-	# DNAT to TAP
+	# L2/L3 DNAT to TAP
 	actions1.append(of.ofp_action_dl_addr(type=OFPAT_SET_DL_DST, dl_addr=self.mitmer.tap.tap_dl_addr))
 	actions1.append(of.ofp_action_nw_addr(type=OFPAT_SET_NW_DST, nw_addr=self.mitmer.tap.tap_nw_addr))
-	# output to TAP
+	# output to TAP port
 	actions1.append(of.ofp_action_output(port = self.mitmer.tap.port))
-
 	self.mitmer.mk_flow(match1, actions1, buffer_id)
+
+	# -- reverse flow
+	# capture the expected TFTP server response, bearing in mind our translations
+	match2 = of.ofp_match(
+		dl_src = self.mitmer.tap.tap_dl_addr, dl_dst = self.mitmer.tap.tapgw_dl_addr,
+		nw_src = self.mitmer.tap.tap_nw_addr, nw_dst = self.mitmer.tap.tapgw_nw_addr,
+		tp_src = match1.tp_dst, tp_dst = match1.tp_src)
+
+	actions2 = []
+	# L2/L3 DNAT to original packet source
+	actions2.append(of.ofp_action_dl_addr(type=OFPAT_SET_DL_DST, dl_addr=packet.src))
+	actions2.append(of.ofp_action_nw_addr(type=OFPAT_SET_NW_DST, nw_addr=ip4h.srcip))
+	# L2/L3 SNAT to original packet destination
+	actions2.append(of.ofp_action_dl_addr(type=OFPAT_SET_DL_SRC, dl_addr=packet.dst))
+	actions2.append(of.ofp_action_nw_addr(type=OFPAT_SET_NW_SRC, nw_addr=ip4h.dstip))
+	# output to the original ingress port
+	actions2.append(of.ofp_action_output(port = in_port))
+	self.mitmer.mk_flow(match2, actions2)
 
 	return True
 
