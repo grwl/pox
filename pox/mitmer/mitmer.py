@@ -51,16 +51,23 @@ class Mitmer (EventMixin):
   For each new L3 connection it creates a flow.
   If connection redirection is setup, it will create a redirection flow.
   '''
-  def __init__ (self, connection):
+  def __init__ (self, connection, in_port, out_port, dst, tap_tp_port):
     self.connection = connection
 
-    self.ports = [3, 4]
+    # XXX should this parsing happen here or in launch()?
+    in_port = int(in_port)
+    out_port = int(out_port)
+    (proto, nw_dst, tp_dst) = dst.split(':')
+    tp_dst = int(tp_dst)
+    tap_tp_port = int(tap_tp_port)
+
+    self.ports = [in_port, out_port]
     self.tap = Tap()
 
     self.redirectors = [
-	OneWayRedirector(self, in_port = 3,
-		proto = 'tcp', nw_dst = '10.64.73.12', tp_dst = 443,
-		tap_tp_port = 8443
+	OneWayRedirector(self, in_port = in_port,
+		proto = proto, nw_dst = nw_dst, tp_dst = tp_dst,
+		tap_tp_port = tap_tp_port
 	)
     ]
 
@@ -140,17 +147,21 @@ class mitmer (EventMixin):
   """
   Waits for OpenFlow switches to connect and makes them Mitmers.
   """
-  def __init__ (self):
+  def __init__ (self, in_port, out_port, dst, tap_tp_port):
+    self.in_port = in_port
+    self.out_port = out_port
+    self.dst = dst
+    self.tap_tp_port = tap_tp_port
     self.listenTo(core.openflow)
 
   def _handle_ConnectionUp (self, event):
     log.debug("Connection %s" % (event.connection,))
-    Mitmer(event.connection)
+    Mitmer(event.connection, self.in_port, self.out_port, self.dst, self.tap_tp_port)
 
 
-def launch ():
+def launch (in_port, out_port, dst, tap_tp_port):
   """
   Starts Mitmer.
   """
-  core.registerNew(mitmer)
+  core.registerNew(mitmer, in_port, out_port, dst, tap_tp_port)
 
