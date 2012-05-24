@@ -61,7 +61,8 @@ class Mitmer (EventMixin):
 		self,
 		in_port = 2,
 		server_nw_addr = '10.66.98.1'
-	)]
+	)
+    ]
 
     # We want to hear PacketIn messages, so we listen
     self.listenTo(connection)
