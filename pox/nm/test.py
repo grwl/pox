@@ -1,4 +1,7 @@
 import unittest
+import time
+import urllib2
+import threading
 
 from pox import nm
 
@@ -14,64 +17,97 @@ OOB_TESTBED_HOST2 = 'mitmer-testbed-host2.local'
 
 class TestController(unittest.TestCase):
     def setUp(self):
-        self.controller = nm.Controller()
-        self.controller.set_mitm_ifaces(TESTBED_MITMER_IFACE1, TESTBED_MITMER_IFACE2)
-        self.controller.start()
+        nm.controller.set_mitm_ifaces(TESTBED_MITMER_IFACE1, TESTBED_MITMER_IFACE2)
+        nm.controller.start()
 
     def tearDown(self):
-        self.controller.deinit_mitm_switch()
-        self.controller.stop()
-        self.controller.join()
+        nm.controller.deinit_mitm_switch()
+        nm.controller.stop()
+        nm.controller.join()
 
     def test_0010_testbed_httpservers_run(self):
-        self.assert_wget('http://%s/mitmer.txt' % OOB_TESTBED_MITMER, 'mitmer\n')
-        self.assert_wget('http://%s/mitmer.txt' % OOB_TESTBED_HOST2, 'host2\n')
+	''' HTTP listeners on mitmer and host2 work as expected '''
+        self.assert_wget('http://%s/mitmer.txt' % OOB_TESTBED_MITMER, 'mitmer\n', timeout=1)
+        self.assert_wget('http://%s/mitmer.txt' % OOB_TESTBED_HOST2, 'host2\n', timeout=1)
 
     def test_0020_no_connectivity_without_switch(self):
         ''' there is no connectivity without the switch '''
         self.assertRaises(
             IOError,
-            self.assert_wget, 'http://%s:10080/mitmer.txt' % OOB_TESTBED_HOST1, 'whatever\n');
+            self.assert_wget, 'http://%s:10080/mitmer.txt' % OOB_TESTBED_HOST1, 'whatever\n', timeout=3);
 
     def test_0030_can_init_mitm_switch(self):
-        ''' just test that we can initialize the switch '''
-        self.controller.init_mitm_switch()
+        ''' can initialize the switch '''
+        nm.controller.init_mitm_switch()
+	# make sure pox and vswitchd have time to communicate
+	time.sleep(1)
+
+    def test_0031_crash_on_rapid_close(self):
+        ''' apparently this test upsets pox by closing connection too fast '''
+        nm.controller.init_mitm_switch()
 
     def test_0040_empty_switch_transparent(self):
         ''' empty switch is transparent '''
-        self.controller.init_mitm_switch()
-	import time
-	time.sleep(10)
-        self.assert_wget('http://%s:10080/mitmer.txt' % OOB_TESTBED_HOST1, 'host2\n')
+        nm.controller.init_mitm_switch()
+	time.sleep(1)
+        self.assert_wget('http://%s:10080/mitmer.txt' % OOB_TESTBED_HOST1, 'host2\n', ntries=10)
 
     def _test_add_metaflow(self):
-        self.controller.init_mitm_switch()
-        self.controller.enable_mitm_tap()
+        nm.controller.init_mitm_switch()
+        nm.controller.enable_mitm_tap()
 
         mf = MetaFlow(
             of.ofp_match(in_port = TEST_MITM_IFACE1, nw_dst = TEST_HOST2, tp_dst = 80),
             OneWayInterceptor()
         )
-        self.controller.add_metaflow(mf)
+        nm.controller.add_metaflow(mf)
 
-        self.assert_wget('http://%s:10080/mitmer.txt' % OOB_TEST_HOST1, 'mitmer\n')
+        self.assert_wget('http://%s:10080/mitmer.txt' % OOB_TEST_HOST1, 'mitmer\n', timeout=1)
 
-        self.controller.remove_metaflow(mf)
+        nm.controller.remove_metaflow(mf)
 
-        self.controller.disable_mitm_tap()
+        nm.controller.disable_mitm_tap()
 
     def _test_enable_mitm_tap(self):
-        self.controller.init_mitm_switch()
-        self.controller.enable_mitm_tap()
-        self.controller.disable_mitm_tap()
+        nm.controller.init_mitm_switch()
+        nm.controller.enable_mitm_tap()
+        nm.controller.disable_mitm_tap()
 
-    def assert_wget(self, url, expected_content):
+    def assert_wget(self, url, expected_content, timeout=5, ntries=1):
         ''' This method fetches data from the specified URL and compared the returned content with the expected one '''
-        import urllib
-        f = urllib.urlopen(url)
-        actual_content = f.read()
-        f.close()
-        self.assertEqual(expected_content, actual_content)
+	assert(ntries > 0)
 
-if __name__ == '__main__':
-    unittest.main()
+	while ntries > 0:
+		try:
+        		f = urllib2.urlopen(url, timeout=timeout)
+        		actual_content = f.read()
+        		f.close()
+        		self.assertEqual(expected_content, actual_content)
+			return
+		except Exception as ex:
+			last_exception = ex
+			ntries -= 1
+			time.sleep(timeout)
+	raise last_exception
+
+    @staticmethod
+    def suite():
+	suite = unittest.TestSuite()
+	suite.addTest(TestController('test_0010_testbed_httpservers_run'))
+	suite.addTest(TestController('test_0020_no_connectivity_without_switch'))
+    	suite.addTest(TestController('test_0030_can_init_mitm_switch'))
+    	#suite.addTest(TestController('test_0031_crash_on_rapid_close'))
+    	suite.addTest(TestController('test_0040_empty_switch_transparent'))
+    	return suite
+
+def run_tests():
+	s = TestController.suite()
+	unittest.TextTestRunner(verbosity=2).run(s)
+
+def launch():
+	s = TestController.suite()
+	threading.Thread(target = run_tests).start()
+	#run_tests()
+
+#launch()
+
