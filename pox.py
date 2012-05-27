@@ -337,7 +337,7 @@ def setup_logging(log_config="logging.cfg", fail_if_non_existent=False):
   formatter = logging.Formatter(logging.BASIC_FORMAT)
   pox.core._default_log_handler.setFormatter(formatter)
   logging.getLogger().addHandler(pox.core._default_log_handler)
-  logging.getLogger().setLevel(logging.DEBUG)
+  logging.getLogger().setLevel(logging.INFO)
 
   if os.path.exists(log_config):
     logging.config.fileConfig(log_config, disable_existing_loggers=True)
