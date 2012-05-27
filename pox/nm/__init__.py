@@ -66,10 +66,11 @@ class Controller(object):
 
     def join(self):
 	pass
+
     def sudo(self, cmd, bg=False):
         sudo_cmd = ['sudo']
         sudo_cmd.extend(cmd)
-        if subprocess.call(sudo_cmd) != 0:
+        if subprocess.call(sudo_cmd, close_fds=True) != 0:
             raise RuntimeError('command "%s" has failed"' % sudo_cmd)
 
     def spawn(self, cmd):
