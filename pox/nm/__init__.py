@@ -106,10 +106,10 @@ class Controller(object):
         self.iface2 = iface2
 
     def enable_mitm_tap(self):
-        raise NotImplemented()
+        self.sudo(['ip', 'link', 'dev', self.bridge_name, 'up'])
 
     def disable_mitm_tap(self):
-        raise NotImplemented()
+        self.sudo(['ip', 'link', 'dev', self.bridge_name, 'down'])
 
     def add_metaflow(self, mf):
         raise NotImplemented()
