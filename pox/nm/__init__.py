@@ -47,20 +47,25 @@ class Stack(object):
     def set_global_policy(self, policy):
         self.policy = policy
 
-class Controller(threading.Thread):
+class Controller(object):
     should_stop = False
     bridge_name = 'mitm0'
 
     def __init__(self):
-        threading.Thread.__init__(self, target = self.run)
+        #threading.Thread.__init__(self, target = self.run)
         self.initialized = False
 
     def run(self):
         pass
 
+    def start(self):
+	pass
+
     def stop(self):
         self.should_stop = True
 
+    def join(self):
+	pass
     def sudo(self, cmd, bg=False):
         sudo_cmd = ['sudo']
         sudo_cmd.extend(cmd)
@@ -68,7 +73,7 @@ class Controller(threading.Thread):
             raise RuntimeError('command "%s" has failed"' % sudo_cmd)
 
     def spawn(self, cmd):
-        return subprocess.Popen(cmd)
+        return subprocess.Popen(cmd, close_fds=True)
 
     def init_mitm_switch(self, failmode_standalone=False):
         assert not self.initialized, 'double initialization'
@@ -80,8 +85,7 @@ class Controller(threading.Thread):
             self.sudo(['ovs-vsctl', 'add-port', self.bridge_name, self.iface2])
             self.sudo(['ovs-vsctl', 'set-controller', self.bridge_name, OVS_CONTROLLER_URL])
 
-            self.pox = self.spawn(['env', 'PYTHONPATH=../pox', 'python',
-                       '../pox/pox.py', '--no-cli', 'forwarding.l2_learning'])
+            #self.pox = self.spawn(['env', 'PYTHONPATH=../pox', 'python', '../pox/pox.py', '--no-cli', 'forwarding.l2_learning'])
             self.initialized = True
         except:
             try:
@@ -93,7 +97,7 @@ class Controller(threading.Thread):
     def deinit_mitm_switch(self):
         if self.initialized:
             self.sudo(['ovs-vsctl', 'del-br', self.bridge_name])
-            self.pox.terminate()
+            #self.pox.terminate()
             self.initialized = False
 
     def set_mitm_ifaces(self, iface1, iface2):
