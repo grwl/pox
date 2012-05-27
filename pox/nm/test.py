@@ -49,8 +49,7 @@ class TestController(unittest.TestCase):
     def test_0040_empty_switch_transparent(self):
         ''' empty switch is transparent '''
         nm.controller.init_mitm_switch()
-	time.sleep(1)
-        self.assert_wget('http://%s:10080/mitmer.txt' % OOB_TESTBED_HOST1, 'host2\n', ntries=10)
+        self.assert_wget('http://%s:10080/mitmer.txt' % OOB_TESTBED_HOST1, 'host2\n', timeout=3, ntries=3)
 
     def _test_add_metaflow(self):
         nm.controller.init_mitm_switch()
