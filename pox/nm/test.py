@@ -51,7 +51,12 @@ class TestController(unittest.TestCase):
         nm.controller.init_mitm_switch()
         self.assert_wget('http://%s:10080/mitmer.txt' % OOB_TESTBED_HOST1, 'host2\n', timeout=3, ntries=3)
 
-    def _test_add_metaflow(self):
+    def test_0050_enable_mitm_tap(self):
+        nm.controller.init_mitm_switch()
+        nm.controller.enable_mitm_tap()
+        nm.controller.disable_mitm_tap()
+
+    def _test_0100_add_metaflow(self):
         nm.controller.init_mitm_switch()
         nm.controller.enable_mitm_tap()
 
@@ -65,11 +70,6 @@ class TestController(unittest.TestCase):
 
         nm.controller.remove_metaflow(mf)
 
-        nm.controller.disable_mitm_tap()
-
-    def _test_enable_mitm_tap(self):
-        nm.controller.init_mitm_switch()
-        nm.controller.enable_mitm_tap()
         nm.controller.disable_mitm_tap()
 
     def assert_wget(self, url, expected_content, timeout=5, ntries=1):
@@ -97,6 +97,7 @@ class TestController(unittest.TestCase):
     	suite.addTest(TestController('test_0030_can_init_mitm_switch'))
     	#suite.addTest(TestController('test_0031_crash_on_rapid_close'))
     	suite.addTest(TestController('test_0040_empty_switch_transparent'))
+    	suite.addTest(TestController('test_0050_enable_mitm_tap'))
     	return suite
 
 def run_tests():
