@@ -4,7 +4,9 @@ import time
 import urllib2
 import threading
 
+from pox.core import core
 from pox import nm
+from pox import mitmer
 
 TESTBED_MITMER_IFACE1 = 'eth1'
 TESTBED_MITMER_IFACE2 = 'eth2'
@@ -62,17 +64,28 @@ class TestController(unittest.TestCase):
         nm.controller.enable_mitm_tap()
         nm.controller.disable_mitm_tap()
 
+    def test_0060_add_oneway_redirector(self):
+        nm.controller.init_mitm_switch()
+        nm.controller.enable_mitm_tap()
+	time.sleep(3)
+	core.mitmer.add_oneway_redirector(
+          in_port = TESTBED_MITMER_IFACE1, out_port = TESTBED_MITMER_IFACE2,
+	  dst = 'tcp:%s:80' % TESTBED_SERVER2,
+          tap_tp_port=80
+	)
+        nm.controller.disable_mitm_tap()
+
     def _test_0100_add_metaflow(self):
         nm.controller.init_mitm_switch()
         nm.controller.enable_mitm_tap()
 
         mf = MetaFlow(
-            of.ofp_match(in_port = TEST_MITM_IFACE1, nw_dst = TEST_HOST2, tp_dst = 80),
+            of.ofp_match(in_port = TESTBED_MITMER_IFACE1, nw_dst = TESTBED_HOST2, tp_dst = 80),
             OneWayInterceptor()
         )
         nm.controller.add_metaflow(mf)
 
-        self.assert_wget('http://%s:10080/mitmer.txt' % OOB_TEST_HOST1, 'mitmer\n', timeout=1)
+        self.assert_wget('http://%s:10080/mitmer.txt' % OOB_TESTBED_HOST1, 'mitmer\n', timeout=1)
 
         nm.controller.remove_metaflow(mf)
 
@@ -98,13 +111,17 @@ class TestController(unittest.TestCase):
     @staticmethod
     def suite():
 	suite = unittest.TestSuite()
-	suite.addTest(TestController('test_0010_testbed_httpservers_run'))
-	suite.addTest(TestController('test_0020_no_connectivity_without_switch'))
-    	suite.addTest(TestController('test_0030_can_init_mitm_switch'))
-    	#suite.addTest(TestController('test_0031_crash_on_rapid_close'))
-    	suite.addTest(TestController('test_0040_standalone_switch_working'))
-    	suite.addTest(TestController('test_0045_empty_switch_transparent'))
-    	suite.addTest(TestController('test_0050_enable_mitm_tap'))
+	if False:
+	  suite.addTest(TestController('test_0010_testbed_httpservers_run'))
+	  suite.addTest(TestController('test_0020_no_connectivity_without_switch'))
+    	  suite.addTest(TestController('test_0030_can_init_mitm_switch'))
+    	  #suite.addTest(TestController('test_0031_crash_on_rapid_close'))
+    	  suite.addTest(TestController('test_0040_standalone_switch_working'))
+    	  suite.addTest(TestController('test_0045_empty_switch_transparent'))
+    	  suite.addTest(TestController('test_0050_enable_mitm_tap'))
+
+    	suite.addTest(TestController('test_0060_add_oneway_redirector'))
+
     	return suite
 
 def run_tests():

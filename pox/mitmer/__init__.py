@@ -62,20 +62,35 @@ class Mitmer (EventMixin):
     self.tap = Tap()
     self.redirectors = []
 
-#    if dst and tap_tp_port:
-#	(proto, nw_dst, tp_dst) = dst.split(':')
-#    	tp_dst = int(tp_dst)
-#    	tap_tp_port = int(tap_tp_port)
-#
-#	self.redirectors.append(OneWayRedirector(self, in_port = in_port,
-#		proto = proto, nw_dst = nw_dst, tp_dst = tp_dst,
-#		tap_tp_port = tap_tp_port
-#	))
+    if dst and tap_tp_port:
+      self.add_oneway_redirector(self, in_port, out_port, dst, tap_tp_port)
 
     # We want to hear PacketIn messages, so we listen
     self.listenTo(connection)
 
     log.info("Initializing Mitmer, ports=%s", self.ports)
+
+  def add_oneway_redirector(self, in_port, out_port, dst, tap_tp_port):
+    '''
+    This method can be used to create a one-way redirect to divert
+    packet flow 'dst' towards a listener on 'tap_tp_port' port on the local host.
+    The destination parameter format is 'tcp:8.8.8.8:53'.
+    '''
+    (proto, nw_dst, tp_dst) = dst.split(':')
+    tp_dst = int(tp_dst)
+    tap_tp_port = int(tap_tp_port)
+
+    redirector = OneWayRedirector(self,
+      in_port = in_port, out_port = out_port,
+      proto = proto, nw_dst = nw_dst, tp_dst = tp_dst,
+      tap_tp_port = tap_tp_port
+    )
+
+    self.add_redirector(redirector)
+    return redirector
+
+  def add_redirector(self, redirector):
+    self.redirectors.append(redirector)
 
   def isTapPort(self, port):
     '''
@@ -154,11 +169,14 @@ class mitmer (EventMixin):
     self.dst = dst
     self.tap_tp_port = tap_tp_port
     self.listenTo(core.openflow)
+    self.mitmer = None
 
   def _handle_ConnectionUp (self, event):
     log.debug("Connection %s" % (event.connection,))
-    Mitmer(event.connection, self.in_port, self.out_port, self.dst, self.tap_tp_port)
+    self.mitmer = Mitmer(event.connection, self.in_port, self.out_port, self.dst, self.tap_tp_port)
 
+  def add_oneway_redirector(self, in_port, out_port, dst, tap_tp_port):
+    self.mitmer.add_oneway_redirector(in_port, out_port, dst, tap_tp_port)
 
 def launch (in_port=1, out_port=2, dst=None, tap_tp_port=None):
   """
