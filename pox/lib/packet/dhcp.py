@@ -151,10 +151,11 @@ class dhcp(packet_base):
         s += ' siaddr:'+str(self.siaddr)
         s += ' giaddr:'+str(self.giaddr)
         s += ' chaddr:'
-        if isinstance(self.chaddr, EthAddr):
-            s += str(self.chaddr)
-        else:
-            s += ' '.join(["{0:02x}".format(x) for x in self.chaddr])
+	if self.chaddr:
+          if isinstance(self.chaddr, EthAddr):
+              s += str(self.chaddr)
+          else:
+              s += ' '.join(["{0:02x}".format(x) for x in self.chaddr])
         s += ' magic:'+' '.join(["{0:02x}".format(x) for x in self.magic])
         s += ' options:'+' '.join(["{0:02x}".format(x) for x in
                                   self._raw_options])
