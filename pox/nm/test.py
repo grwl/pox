@@ -49,7 +49,7 @@ class TestController(unittest.TestCase):
     def test_0040_standalone_switch_working(self):
         ''' standalone switch is working '''
         nm.controller.init_mitm_switch(standalone=True)
-        self.assert_wget('http://%s:10080/mitmer.txt' % OOB_TESTBED_HOST1, 'host2\n', timeout=3, ntries=3000)
+        self.assert_wget('http://%s:10080/mitmer.txt' % OOB_TESTBED_HOST1, 'host2\n', timeout=3, ntries=3)
 
     def test_0045_empty_switch_transparent(self):
         ''' empty switch is transparent '''
@@ -102,7 +102,7 @@ class TestController(unittest.TestCase):
     	#suite.addTest(TestController('test_0030_can_init_mitm_switch'))
     	#suite.addTest(TestController('test_0031_crash_on_rapid_close'))
     	suite.addTest(TestController('test_0040_standalone_switch_working'))
-    	#suite.addTest(TestController('test_0040_empty_switch_transparent'))
+    	suite.addTest(TestController('test_0045_empty_switch_transparent'))
     	#suite.addTest(TestController('test_0050_enable_mitm_tap'))
     	return suite
 
