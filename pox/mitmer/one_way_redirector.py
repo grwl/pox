@@ -38,9 +38,10 @@ class OneWayRedirector(object):
   '''
   This redirector will capture and redirect L3 connection to the specified destination
   '''
-  def __init__(self, mitmer, in_port, proto, nw_dst, tp_dst, tap_tp_port):
+  def __init__(self, mitmer, in_port, out_port, proto, nw_dst, tp_dst, tap_tp_port):
 	self.mitmer = mitmer
   	self.in_port = in_port
+  	self.out_port = out_port  # XXX not implemented 
 
 	if proto == 'udp':   self.nw_proto = ipv4.UDP_PROTOCOL
 	elif proto == 'tcp': self.nw_proto = ipv4.TCP_PROTOCOL
