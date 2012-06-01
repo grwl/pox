@@ -112,7 +112,7 @@ class Mitmer (EventMixin):
 	'''
 	packet = event.parse()
 	in_port = event.port
-    	log.info("from port %d got a packet: %s" % (in_port, packet))
+    	log.debug("from port %d got a packet: %s" % (in_port, packet))
 
 	buffer_id = event.ofp.buffer_id
 
@@ -144,7 +144,7 @@ class Mitmer (EventMixin):
 	'''
 	for redirector in self.redirectors:
 		if redirector.process(in_port, buffer_id, packet):
-			log.info('processed with redirector %s' % redirector)
+			log.debug('processed with redirector %s' % redirector)
 			return True
 	log.debug('not processed with any redirector')
 	return False
