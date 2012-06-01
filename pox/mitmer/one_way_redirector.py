@@ -54,7 +54,7 @@ class OneWayRedirector(object):
 
   def qualify(self, in_port, packet):
 	if self.in_port != in_port:
-		log.debug('packet disqualified because of ingress port mismatch')
+		log.debug('packet disqualified because of ingress port mismatch: expected %d got %d' % (self.in_port, in_port))
 		return False
 	ip4h = packet.find("ipv4")  # XXX what about IPv6?
 	if ((ip4h == None) or (ip4h.dstip != self.nw_dst) or (ip4h.protocol != self.nw_proto)):

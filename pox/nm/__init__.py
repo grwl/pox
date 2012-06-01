@@ -9,6 +9,13 @@ import threading
 
 OVS_CONTROLLER_URL = 'tcp:127.0.0.1:6633'
 
+tap_dl_addr='b8:8d:12:53:76:45'
+tap_nw_addr='10.255.255.254'
+tapgw_dl_addr='b8:8d:12:53:76:46'
+tapgw_nw_addr='10.255.255.253'
+tap_nw_masklen=30
+tap_nw_bcast='10.255.255.255'
+
 class Iface(object):
     def __init__(self, up, loopback, carrier):
         self.up = up
@@ -25,27 +32,28 @@ class Stack(object):
         out = run_ext_command(['ip', 'link', 'list'])
         self.parse_ip_links_out(out)
 
-        for link in self.links:
-            if not link.loopback:
-                out = run_ext_command(['ethtool', link])
-                self.parse_ethtool_out(link, out)
+        #for link in self.links:
+        #    if not link.loopback:
+        #        out = run_ext_command(['ethtool', link])
+        #        self.parse_ethtool_out(link, out)
 
     def parse_ip_links_out(self, out):
         self.links = dict()
-        pass
+        	pass
 
-    def parse_ethtool_out(self, link, out):
-        pass
+    #def parse_ethtool_out(self, link, out):
+    #    pass
 
     def get_iface(self, iface):
         return self.links[iface]
 
-    def set_iface_policy(self, iface, policy):
+#    def set_iface_policy(self, iface, policy):
+#
+#        self.links[iface].policy = policy
+#
+#    def set_global_policy(self, policy):
+#        self.policy = policy
 
-        self.links[iface].policy = policy
-
-    def set_global_policy(self, policy):
-        self.policy = policy
 
 class Controller(object):
     should_stop = False
@@ -106,8 +114,10 @@ class Controller(object):
 
     def enable_mitm_tap(self):
         self.sudo(['ip', 'link', 'set', 'dev', self.bridge_name, 'up'])
+        self.sudo(['ip', 'addr', 'add', '%s/%d' % (tap_nw_addr, tap_nw_masklen), 'broadcast', tap_nw_bcast, 'dev', self.bridge_name])
 
     def disable_mitm_tap(self):
+        self.sudo(['ip', 'addr', 'del', '%s/%d' % (tap_nw_addr, tap_nw_masklen), 'broadcast', tap_nw_bcast, 'dev', self.bridge_name])
         self.sudo(['ip', 'link', 'set', 'dev', self.bridge_name, 'down'])
 
     def add_metaflow(self, mf):
