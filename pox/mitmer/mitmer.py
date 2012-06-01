@@ -62,15 +62,15 @@ class Mitmer (EventMixin):
     self.tap = Tap()
     self.redirectors = []
 
-    if dst and tap_tp_port:
-	(proto, nw_dst, tp_dst) = dst.split(':')
-    	tp_dst = int(tp_dst)
-    	tap_tp_port = int(tap_tp_port)
-
-	self.redirectors.append(OneWayRedirector(self, in_port = in_port,
-		proto = proto, nw_dst = nw_dst, tp_dst = tp_dst,
-		tap_tp_port = tap_tp_port
-	))
+#    if dst and tap_tp_port:
+#	(proto, nw_dst, tp_dst) = dst.split(':')
+#    	tp_dst = int(tp_dst)
+#    	tap_tp_port = int(tap_tp_port)
+#
+#	self.redirectors.append(OneWayRedirector(self, in_port = in_port,
+#		proto = proto, nw_dst = nw_dst, tp_dst = tp_dst,
+#		tap_tp_port = tap_tp_port
+#	))
 
     # We want to hear PacketIn messages, so we listen
     self.listenTo(connection)
@@ -160,7 +160,7 @@ class mitmer (EventMixin):
     Mitmer(event.connection, self.in_port, self.out_port, self.dst, self.tap_tp_port)
 
 
-def launch (in_port, out_port, dst=None, tap_tp_port=None):
+def launch (in_port=1, out_port=2, dst=None, tap_tp_port=None):
   """
   Starts Mitmer.
   """
