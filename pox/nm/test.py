@@ -97,13 +97,13 @@ class TestController(unittest.TestCase):
     @staticmethod
     def suite():
 	suite = unittest.TestSuite()
-	#suite.addTest(TestController('test_0010_testbed_httpservers_run'))
-	#suite.addTest(TestController('test_0020_no_connectivity_without_switch'))
-    	#suite.addTest(TestController('test_0030_can_init_mitm_switch'))
+	suite.addTest(TestController('test_0010_testbed_httpservers_run'))
+	suite.addTest(TestController('test_0020_no_connectivity_without_switch'))
+    	suite.addTest(TestController('test_0030_can_init_mitm_switch'))
     	#suite.addTest(TestController('test_0031_crash_on_rapid_close'))
     	suite.addTest(TestController('test_0040_standalone_switch_working'))
     	suite.addTest(TestController('test_0045_empty_switch_transparent'))
-    	#suite.addTest(TestController('test_0050_enable_mitm_tap'))
+    	suite.addTest(TestController('test_0050_enable_mitm_tap'))
     	return suite
 
 def run_tests():
@@ -113,7 +113,6 @@ def run_tests():
 def launch():
 	s = TestController.suite()
 	threading.Thread(target = run_tests).start()
-	#run_tests()
 
 #launch()
 
