@@ -29,15 +29,23 @@ class Iface(object):
 
 class Sudo:
     @staticmethod
-    def sudo(cmd, bg=False):
+    def do(cmd):
+      if subprocess.call(close_fds=True) != 0:
+    	raise RuntimeError('command "%s" has failed"' % cmd)
+
+    @staticmethod
+    def sudo(cmd:
       sudo_cmd = ['sudo']
       sudo_cmd.extend(cmd)
       if subprocess.call(sudo_cmd, close_fds=True) != 0:
     	raise RuntimeError('command "%s" has failed"' % sudo_cmd)
 
 class Stack(object):
-    def run(self):
-        out = run_ext_command(['ip', 'link', 'list'])
+    def __init__(self):
+	self.refresh()
+
+    def refresh(self):
+        out = Sudo.do(['ip', 'link', 'list'])
         self.parse_ip_links_out(out)
 
         #for link in self.links:
@@ -47,6 +55,7 @@ class Stack(object):
 
     def parse_ip_links_out(self, out):
         self.links = dict()
+	print out
         pass
 
     #def parse_ethtool_out(self, link, out):
