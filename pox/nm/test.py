@@ -1,3 +1,4 @@
+import os, signal
 import unittest
 import time
 import urllib2
@@ -108,7 +109,10 @@ class TestController(unittest.TestCase):
 
 def run_tests():
 	s = TestController.suite()
-	unittest.TextTestRunner(verbosity=2).run(s)
+	if unittest.TextTestRunner(verbosity=2).run(s):
+		os.kill(os.getpid(), signal.SIGTERM)
+        else:
+		os.kill(os.getpid(), signal.SIGABRT)
 
 def launch():
 	s = TestController.suite()
