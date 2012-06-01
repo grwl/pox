@@ -27,6 +27,14 @@ class Iface(object):
     def set_speed(self, speed): self.speed = speed
 
 
+class Sudo:
+    @staticmethod
+    def sudo(cmd, bg=False):
+      sudo_cmd = ['sudo']
+      sudo_cmd.extend(cmd)
+      if subprocess.call(sudo_cmd, close_fds=True) != 0:
+    	raise RuntimeError('command "%s" has failed"' % sudo_cmd)
+
 class Stack(object):
     def run(self):
         out = run_ext_command(['ip', 'link', 'list'])
@@ -39,7 +47,7 @@ class Stack(object):
 
     def parse_ip_links_out(self, out):
         self.links = dict()
-        	pass
+        pass
 
     #def parse_ethtool_out(self, link, out):
     #    pass
@@ -75,11 +83,8 @@ class Controller(object):
     def join(self):
 	pass
 
-    def sudo(self, cmd, bg=False):
-        sudo_cmd = ['sudo']
-        sudo_cmd.extend(cmd)
-        if subprocess.call(sudo_cmd, close_fds=True) != 0:
-            raise RuntimeError('command "%s" has failed"' % sudo_cmd)
+    def sudo(self, *kargs, **kwargs):
+        return Sudo.sudo(*kargs, **kwargs)
 
     def spawn(self, cmd):
         return subprocess.Popen(cmd, close_fds=True)
