@@ -76,17 +76,17 @@ class Controller(object):
     def spawn(self, cmd):
         return subprocess.Popen(cmd, close_fds=True)
 
-    def init_mitm_switch(self, failmode_standalone=False):
+    def init_mitm_switch(self, standalone=False):
         assert not self.initialized, 'double initialization'
         self.sudo(['ovs-vsctl', 'add-br', self.bridge_name])
         try:
             # assume freshly created vswitch, no need to clean
-            self.sudo(['ovs-vsctl', 'set-fail-mode', self.bridge_name, 'secure'])
+            if not standalone:
+              self.sudo(['ovs-vsctl', 'set-fail-mode', self.bridge_name, 'secure'])
+              self.sudo(['ovs-vsctl', 'set-controller', self.bridge_name, OVS_CONTROLLER_URL])
             self.sudo(['ovs-vsctl', 'add-port', self.bridge_name, self.iface1])
             self.sudo(['ovs-vsctl', 'add-port', self.bridge_name, self.iface2])
-            self.sudo(['ovs-vsctl', 'set-controller', self.bridge_name, OVS_CONTROLLER_URL])
 
-            #self.pox = self.spawn(['env', 'PYTHONPATH=../pox', 'python', '../pox/pox.py', '--no-cli', 'forwarding.l2_learning'])
             self.initialized = True
         except:
             try:
@@ -98,7 +98,6 @@ class Controller(object):
     def deinit_mitm_switch(self):
         if self.initialized:
             self.sudo(['ovs-vsctl', 'del-br', self.bridge_name])
-            #self.pox.terminate()
             self.initialized = False
 
     def set_mitm_ifaces(self, iface1, iface2):
@@ -106,10 +105,10 @@ class Controller(object):
         self.iface2 = iface2
 
     def enable_mitm_tap(self):
-        self.sudo(['ip', 'link', 'dev', self.bridge_name, 'up'])
+        self.sudo(['ip', 'link', 'set', 'dev', self.bridge_name, 'up'])
 
     def disable_mitm_tap(self):
-        self.sudo(['ip', 'link', 'dev', self.bridge_name, 'down'])
+        self.sudo(['ip', 'link', 'set', 'dev', self.bridge_name, 'down'])
 
     def add_metaflow(self, mf):
         raise NotImplemented()

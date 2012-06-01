@@ -46,7 +46,12 @@ class TestController(unittest.TestCase):
         ''' apparently this test upsets pox by closing connection too fast '''
         nm.controller.init_mitm_switch()
 
-    def test_0040_empty_switch_transparent(self):
+    def test_0040_standalone_switch_working(self):
+        ''' standalone switch is working '''
+        nm.controller.init_mitm_switch(standalone=True)
+        self.assert_wget('http://%s:10080/mitmer.txt' % OOB_TESTBED_HOST1, 'host2\n', timeout=3, ntries=3000)
+
+    def test_0045_empty_switch_transparent(self):
         ''' empty switch is transparent '''
         nm.controller.init_mitm_switch()
         self.assert_wget('http://%s:10080/mitmer.txt' % OOB_TESTBED_HOST1, 'host2\n', timeout=3, ntries=3)
@@ -92,12 +97,13 @@ class TestController(unittest.TestCase):
     @staticmethod
     def suite():
 	suite = unittest.TestSuite()
-	suite.addTest(TestController('test_0010_testbed_httpservers_run'))
-	suite.addTest(TestController('test_0020_no_connectivity_without_switch'))
-    	suite.addTest(TestController('test_0030_can_init_mitm_switch'))
+	#suite.addTest(TestController('test_0010_testbed_httpservers_run'))
+	#suite.addTest(TestController('test_0020_no_connectivity_without_switch'))
+    	#suite.addTest(TestController('test_0030_can_init_mitm_switch'))
     	#suite.addTest(TestController('test_0031_crash_on_rapid_close'))
-    	suite.addTest(TestController('test_0040_empty_switch_transparent'))
-    	suite.addTest(TestController('test_0050_enable_mitm_tap'))
+    	suite.addTest(TestController('test_0040_standalone_switch_working'))
+    	#suite.addTest(TestController('test_0040_empty_switch_transparent'))
+    	#suite.addTest(TestController('test_0050_enable_mitm_tap'))
     	return suite
 
 def run_tests():
