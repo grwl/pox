@@ -39,7 +39,7 @@ FLOW_IDLE_TIMEOUT = 60
 
 class Tap(object):
 	port = 65534
-	tap_dl_addr = EthAddr('b8:8d:12:53:76:45')
+	tap_dl_addr = None
 	tap_nw_addr = IPAddr('10.255.255.254')
 	tapgw_dl_addr = EthAddr('b8:8d:12:53:76:46')
 	tapgw_nw_addr = IPAddr('10.255.255.253')
@@ -49,7 +49,7 @@ class Mitmer (EventMixin):
   '''
   By default Mitmer behaves like a wire, forwarding packets between two ports.
   For each new L3 connection it creates a flow.
-  If connection redirection is setup, it will create a redirection flow.
+  If connection redirection is set up, it will create a redirection flow.
   '''
   def __init__ (self, connection, in_port, out_port, dst, tap_tp_port):
     self.connection = connection

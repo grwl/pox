@@ -6,7 +6,6 @@ import threading
 
 from pox.core import core
 from pox import nm
-from pox import mitmer
 
 TESTBED_MITMER_IFACE1 = 'eth1'
 TESTBED_MITMER_IFACE2 = 'eth2'
