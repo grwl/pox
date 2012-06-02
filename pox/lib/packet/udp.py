@@ -91,17 +91,17 @@ class udp(packet_base):
             self.msg('(udp parse) warning invalid UDP len %u' % self.len)
             return
 
-        if (self.dstport == dhcp.SERVER_PORT
-                    or self.dstport == dhcp.CLIENT_PORT):
-            self.next = dhcp(raw=raw[udp.MIN_LEN:],prev=self)
-        elif (self.dstport == dns.SERVER_PORT
-                    or self.srcport == dns.SERVER_PORT):
-            self.next = dns(raw=raw[udp.MIN_LEN:],prev=self)
-        elif dlen < self.len:
-            self.msg('(udp parse) warning UDP packet data shorter than UDP len: %u < %u' % (dlen, self.len))
-            return
-        else:
-            self.payload = raw[udp.MIN_LEN:]
+#        if (self.dstport == dhcp.SERVER_PORT
+#                    or self.dstport == dhcp.CLIENT_PORT):
+#            self.next = dhcp(raw=raw[udp.MIN_LEN:],prev=self)
+#        elif (self.dstport == dns.SERVER_PORT
+#                    or self.srcport == dns.SERVER_PORT):
+#            self.next = dns(raw=raw[udp.MIN_LEN:],prev=self)
+#        elif dlen < self.len:
+#            self.msg('(udp parse) warning UDP packet data shorter than UDP len: %u < %u' % (dlen, self.len))
+#            return
+#        else:
+        self.payload = raw[udp.MIN_LEN:]
 
     def hdr(self, payload):
         self.len = len(payload) + udp.MIN_LEN
