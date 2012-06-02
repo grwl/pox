@@ -47,12 +47,12 @@ class MitmerTestCase(NMTestCase):
         self.assert_wget('http://%s:10080/mitmer.txt' % OOB_TESTBED_HOST1, 'mitmer\n', timeout=10, ntries=1)
         nm.controller.disable_mitm_tap()
 
-@staticmethod
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(MitmerTestCase('test_0060_add_oneway_redirector'))
-    suite.addTest(MitmerTestCase('test_0070_use_oneway_redirector'))
-    return suite
+    @staticmethod
+    def suite():
+        suite = unittest.TestSuite()
+        suite.addTest(MitmerTestCase('test_0060_add_oneway_redirector'))
+        suite.addTest(MitmerTestCase('test_0070_use_oneway_redirector'))
+        return suite
 
 def run_tests():
     s = MitmerTestCase.suite()
