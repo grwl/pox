@@ -72,28 +72,27 @@ class NMTestCase(unittest.TestCase):
                 actual_content = f.read()
                 f.close()
                 self.assertEqual(expected_content, actual_content)
-            return
+                return
             except Exception as ex:
-            last_exception = ex
-            ntries -= 1
-            time.sleep(timeout)
+                last_exception = ex
+                ntries -= 1
+                time.sleep(timeout)
 
         raise last_exception
 
 
-@staticmethod
-def suite():
-    suite = unittest.TestSuite()
-    if True:
-        suite.addTest(NMTestCase('test_0010_testbed_httpservers_run'))
-        suite.addTest(NMTestCase('test_0020_no_connectivity_without_switch'))
-        suite.addTest(NMTestCase('test_0030_can_init_mitm_switch'))
-        suite.addTest(NMTestCase('test_0031_crash_on_rapid_close'))
-        suite.addTest(NMTestCase('test_0040_standalone_switch_working'))
-        suite.addTest(NMTestCase('test_0045_empty_switch_transparent'))
-        suite.addTest(NMTestCase('test_0050_enable_mitm_tap'))
-
-    return suite
+    @staticmethod
+    def suite():
+        suite = unittest.TestSuite()
+        if True:
+            suite.addTest(NMTestCase('test_0010_testbed_httpservers_run'))
+            suite.addTest(NMTestCase('test_0020_no_connectivity_without_switch'))
+            #suite.addTest(NMTestCase('test_0030_can_init_mitm_switch'))
+            #suite.addTest(NMTestCase('test_0031_crash_on_rapid_close'))
+            suite.addTest(NMTestCase('test_0040_standalone_switch_working'))
+            suite.addTest(NMTestCase('test_0045_empty_switch_transparent'))
+            suite.addTest(NMTestCase('test_0050_enable_mitm_tap'))
+        return suite
 
 
 def run_tests():
