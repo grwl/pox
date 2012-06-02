@@ -172,7 +172,7 @@ class mitmer (EventMixin):
     self.mitmer = None
 
   def _handle_ConnectionUp (self, event):
-    log.debug("Connection %s" % (event.connection,))
+    log.info("Connection %s" % (event.connection,))
     self.mitmer = Mitmer(event.connection, self.in_port, self.out_port, self.dst, self.tap_tp_port)
 
   def add_oneway_redirector(self, in_port, out_port, dst, tap_tp_port):

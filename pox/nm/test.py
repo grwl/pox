@@ -119,6 +119,8 @@ class TestController(unittest.TestCase):
     	  suite.addTest(TestController('test_0050_enable_mitm_tap'))
     	  suite.addTest(TestController('test_0060_add_oneway_redirector'))
 
+    	suite.addTest(TestController('test_0030_can_init_mitm_switch'))
+    	suite.addTest(TestController('test_0050_enable_mitm_tap'))
     	suite.addTest(TestController('test_0070_use_oneway_redirector'))
 
     	return suite

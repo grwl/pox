@@ -4,6 +4,7 @@ There is Stack singleton object containing other configuration elements.
 '''
 import re
 import subprocess
+from pox.core import core
 
 OVS_CONTROLLER_URL = 'tcp:127.0.0.1:6633'
 
@@ -45,7 +46,7 @@ class Stack(object):
         self.parse_ip_links_out(out)
 
     def parse_ip_links_out(self, out):
-        self.links = []
+        self.links = {}
         out_lines = out.split('\n')
 
         i = 0
@@ -165,9 +166,15 @@ class Controller(object):
         self.sudo(['ip', 'link', 'set', 'dev', self.bridge_name, 'up'])
         self.sudo(['ip', 'addr', 'add', self._tap_addr(), 'broadcast', tap_nw_bcast, 'dev', self.bridge_name])
 
+        # XXX
         stack.refresh()
         tap_dl_addr = stack.get_iface(self.bridge_name)['addrs']['link/ether'][0]
-        core.mitmer.tap.tap_dl_addr = tap_dl_addr
+	print tap_dl_addr
+	time.sleep(100000)
+        while not core.hasComponent('mitmer'):
+	  print "waiting for 'mitmer' to appear"
+          time.sleep(1)
+        core.mitmer.mitmer.tap.tap_dl_addr = tap_dl_addr
 
     def disable_mitm_tap(self):
         self.sudo(['ip', 'addr', 'del',  self._tap_addr(), 'dev', self.bridge_name])
