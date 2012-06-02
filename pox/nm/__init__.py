@@ -88,8 +88,8 @@ class Stack(object):
 
                 i += 1
 
-            link = {'name': iface, 'addrs': addresses}
-            self.links.append(link)
+            link = {'addrs': addresses}
+            self.links[iface] = link
 
     #def parse_ethtool_out(self, link, out):
     #    pass
