@@ -30,11 +30,11 @@ class Iface(object):
 class Sudo:
     @staticmethod
     def do(cmd):
-      if subprocess.call(close_fds=True) != 0:
+      if subprocess.call(cmd, close_fds=True) != 0:
     	raise RuntimeError('command "%s" has failed"' % cmd)
 
     @staticmethod
-    def sudo(cmd:
+    def sudo(cmd):
       sudo_cmd = ['sudo']
       sudo_cmd.extend(cmd)
       if subprocess.call(sudo_cmd, close_fds=True) != 0:
@@ -47,16 +47,45 @@ class Stack(object):
     def refresh(self):
         out = Sudo.do(['ip', 'link', 'list'])
         self.parse_ip_links_out(out)
-
-        #for link in self.links:
-        #    if not link.loopback:
-        #        out = run_ext_command(['ethtool', link])
-        #        self.parse_ethtool_out(link, out)
-
-    def parse_ip_links_out(self, out):
-        self.links = dict()
-	print out
         pass
+
+  def parse_ip_links_out(self, out):
+   self.links = []
+   out_lines = out.split('\n')
+
+   i = 0
+   while i < range(len(out_lines):
+    # -- extract interface name from the first line
+    # 3: wlan0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    line0_match = re.search('^\d+: (\w+):', out_lines[i])
+    if line0_match is None:
+      raise RuntimeError('malformed line in the output: %s' % out_lines[i])
+    iface = line0_match.group(1)
+    i += 1
+
+    # -- parse the remaining lines of the output containing addresses
+    addresses = dict()
+
+    while i < len(out_lines):
+      # tokenize the line
+      line = out_lines[i]
+      words = line.split(' ')
+      if len(words) == 0:
+        continue  # skip empty lines
+      if len(words) < 3:
+        raise RuntimeError('malformed line in the output: %s' % line)
+
+      # link/ether 00:27:10:ea:51:f4 brd ff:ff:ff:ff:ff:ff
+      # inet 10.252.48.103/24 brd 10.252.48.255 scope global wlan0
+
+      layer = words[0]
+      if not addresses.has_key(layer): addresses[layer] = []
+      addresses[layer].append({'addr': words[1], 'other': words[2:]))
+
+      i += 1
+
+    link = {name: iface, addrs: addresses}
+    self.ifaces.append(link)
 
     #def parse_ethtool_out(self, link, out):
     #    pass
