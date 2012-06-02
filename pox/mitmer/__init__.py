@@ -91,6 +91,7 @@ class Mitmer (EventMixin):
 
   def add_redirector(self, redirector):
     self.redirectors.append(redirector)
+    log.info('Redirector added: %s', redirector)
 
   def isTapPort(self, port):
     '''
@@ -117,7 +118,7 @@ class Mitmer (EventMixin):
 	buffer_id = event.ofp.buffer_id
 
 	if self.isTapPort(in_port):
-    		log.debug("dropping a packet received on the tap port: %s" % packet)
+    		#log.debug("dropping a packet received on the tap port: %s" % packet)
 		return
 	elif not self.redirect(in_port, buffer_id, packet):
 		# just forward it through to another port

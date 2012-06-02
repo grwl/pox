@@ -84,9 +84,7 @@ class TestController(unittest.TestCase):
           tap_tp_port=80
         )
 
-	time.sleep(5)
-        self.assert_wget('http://%s:10080/mitmer.txt' % OOB_TESTBED_HOST1, 'xx\n', timeout=10, ntries=1)
-	time.sleep(60)
+        self.assert_wget('http://%s:10080/mitmer.txt' % OOB_TESTBED_HOST1, 'mitmer\n', timeout=10, ntries=1)
         nm.controller.disable_mitm_tap()
 
     def assert_wget(self, url, expected_content, timeout=5, ntries=1):
@@ -119,8 +117,8 @@ class TestController(unittest.TestCase):
     	  suite.addTest(TestController('test_0050_enable_mitm_tap'))
     	  suite.addTest(TestController('test_0060_add_oneway_redirector'))
 
-    	suite.addTest(TestController('test_0030_can_init_mitm_switch'))
-    	suite.addTest(TestController('test_0050_enable_mitm_tap'))
+    	#suite.addTest(TestController('test_0030_can_init_mitm_switch'))
+    	#suite.addTest(TestController('test_0050_enable_mitm_tap'))
     	suite.addTest(TestController('test_0070_use_oneway_redirector'))
 
     	return suite

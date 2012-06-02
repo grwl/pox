@@ -3,15 +3,19 @@ This module gives access to the configuration of Linux network stack.
 There is Stack singleton object containing other configuration elements.
 '''
 import re
+import time
 import subprocess
 from pox.core import core
+from pox.lib.addresses import *
 
 OVS_CONTROLLER_URL = 'tcp:127.0.0.1:6633'
 
-tap_dl_addr = 'b8:8d:12:53:76:45'
 tap_nw_addr = '10.255.255.254'
 tap_nw_masklen = 30
 tap_nw_bcast = '10.255.255.255'
+
+tapgw_dl_addr = 'b8:8d:12:53:76:46'
+tapgw_nw_addr = '10.255.255.253'
 
 class Iface(object):
     def __init__(self, up, loopback, carrier):
@@ -165,16 +169,16 @@ class Controller(object):
     def enable_mitm_tap(self):
         self.sudo(['ip', 'link', 'set', 'dev', self.bridge_name, 'up'])
         self.sudo(['ip', 'addr', 'add', self._tap_addr(), 'broadcast', tap_nw_bcast, 'dev', self.bridge_name])
+        self.sudo(['arp', '-i', self.bridge_name, '-s', tapgw_nw_addr, tapgw_dl_addr])
 
         # XXX
         stack.refresh()
-        tap_dl_addr = stack.get_iface(self.bridge_name)['addrs']['link/ether'][0]
-	print tap_dl_addr
-	time.sleep(100000)
-        while not core.hasComponent('mitmer'):
+        tap_dl_addr = stack.get_iface(self.bridge_name)['addrs']['link/ether'][0]['addr']
+        while not core.hasComponent('mitmer') or not core.mitmer.mitmer:
 	  print "waiting for 'mitmer' to appear"
           time.sleep(1)
-        core.mitmer.mitmer.tap.tap_dl_addr = tap_dl_addr
+        core.mitmer.mitmer.tap.tap_dl_addr = EthAddr(tap_dl_addr)
+
 
     def disable_mitm_tap(self):
         self.sudo(['ip', 'addr', 'del',  self._tap_addr(), 'dev', self.bridge_name])
