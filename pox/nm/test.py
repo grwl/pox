@@ -109,6 +109,8 @@ class TestController(unittest.TestCase):
 def run_tests():
 	s = TestController.suite()
 	unittest.TextTestRunner(verbosity=2).run(s)
+	import os, signal
+	os.kill(os.getpid(), signal.SIGTERM)
 
 def launch():
 	s = TestController.suite()
